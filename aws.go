@@ -71,10 +71,16 @@ type Request struct {
 	Key     string
 	Secret  string
 	Version string
+	Path    string
 	Params
 }
 
 func (r *Request) Encode() string {
+	path := "/"
+	if r.Path != "" {
+		path = r.Path
+	}
+
 	r.Add("AWSAccessKeyId", r.Key)
 	r.Add("SignatureMethod", "HmacSHA256")
 	r.Add("SignatureVersion", "2")
@@ -86,7 +92,7 @@ func (r *Request) Encode() string {
 	data := strings.Join([]string{
 		"POST",
 		r.Host,
-		"/",
+		path,
 		r.Params.Encode(),
 	}, "\n")
 
@@ -130,7 +136,7 @@ func Do(r *Request, v interface{}) error {
 	// otherwise it fails signature checking.
 	// ec2 endpoint seems to be fine with it either way
 	res, err := http.Post(
-		"https://"+r.Host,
+		"https://"+r.Host+r.Path,
 		"application/x-www-form-urlencoded; charset=utf-8",
 		bytes.NewBufferString(r.Encode()),
 	)
